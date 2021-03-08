@@ -7,7 +7,7 @@
 | Feature | Method | Notes |
 | ------- | ------ | ----- |
 |Gets current basket	|`/api/ezp/v2/siso-rest/basket/current`||
-|Reads list of baskets|	`/api/ezp/v2/siso-rest/basket/header/{basket_type}`|Returns wishlist/stored baskets|
+|Reads list of baskets|	`/api/ezp/v2/siso-rest/basket/headers/{basket_type}`|Returns wishlist/stored baskets|
 |Updates party information in the basket|`/api/ezp/v2/siso-rest/basket/current/party/invoice (PATCH)`</br>`/api/ezp/v2/siso-rest/basket/current/party/delivery (PATCH)`</br>`/api/ezp/v2/siso-rest/basket/current/party/buyer (PATCH)`||
 |Updates shipping information|	`/api/ezp/v2/siso-rest/basket/current/shippingmethod` ||
 |Updates payment information|	`/api/ezp/v2/siso-rest/basket/current/paymentmethod`	||
