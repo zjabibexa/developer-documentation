@@ -325,7 +325,7 @@
 }
 
 .md-search__output {
-    display: none;
+    display: block;
 }
 
 [data-md-toggle="search"]:checked ~ .md-header .md-search__inner {

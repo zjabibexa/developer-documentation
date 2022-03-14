@@ -79,18 +79,18 @@ $(document).ready(function() {
         })
         .addClass('external');
 
-    docsearch({
-        container: '#docsearch',
-        appId: '2DNYOU6YJZ',
-        apiKey: '21ce3e522455e18e7ee16cf7d66edb4b',
-        indexName: 'ezplatform',
-        inputSelector: '#search_input',
-        algoliaOptions: {
-            facetFilters: ['lang:en', 'version:' + branchName],
-            hitsPerPage: 10,
-        },
-        debug: false,
-    });
+    // docsearch({
+    //     container: '#docsearch',
+    //     appId: '2DNYOU6YJZ',
+    //     apiKey: '21ce3e522455e18e7ee16cf7d66edb4b',
+    //     indexName: 'ezplatform',
+    //     inputSelector: '#search_input',
+    //     algoliaOptions: {
+    //         facetFilters: ['lang:en', 'version:' + branchName],
+    //         hitsPerPage: 10,
+    //     },
+    //     debug: false,
+    // });
 
     $(document).on('keypress', '#search_input', function(event) {
         if (event.keyCode == 13) {
