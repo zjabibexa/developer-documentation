@@ -9,3 +9,10 @@ python:
   install:
     - requirements: pip_require.txt
     - requirements: requirements.txt
+
+search:
+  ranking:
+    releases/*: -10
+    api/*: 10
+  ignore:
+    - guide/security/
