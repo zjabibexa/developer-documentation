@@ -1,0 +1,7 @@
+ibexa:
+    system:
+        default:
+            product_catalog:
+                completeness:
+                    tasks:
+                        - template: "@ibexadesign/product_catalog/product/tab/completeness/name_completeness_task.html.twig"

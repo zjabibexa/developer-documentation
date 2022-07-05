@@ -1,0 +1,5 @@
+services:
+    App\Completeness\Task\NameTask:
+        parent: Ibexa\Bundle\ProductCatalog\UI\Completeness\Task\AbstractTask
+        tags:
+            - { name: ibexa.product_catalog.completeness.task }
