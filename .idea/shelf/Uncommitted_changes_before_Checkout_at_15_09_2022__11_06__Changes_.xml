@@ -1,0 +1,19 @@
+<changelist name="Uncommitted_changes_before_Checkout_at_15_09_2022,_11_06_[Changes]" date="1663232769121" recycled="true" deleted="true">
+  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_15_09_2022,_11_06_[Changes]/shelved.patch" />
+  <option name="DESCRIPTION" value="Uncommitted changes before Checkout at 15/09/2022, 11:06 [Changes]" />
+  <binary>
+    <option name="BEFORE_PATH" />
+    <option name="AFTER_PATH" value="docs/cdp/img/cdp_accounts.png" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_15_09_2022,_11_06_[Changes]/cdp_accounts.png" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" />
+    <option name="AFTER_PATH" value="docs/cdp/img/cdp_account_number.png" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_15_09_2022,_11_06_[Changes]/cdp_account_number.png" />
+  </binary>
+  <binary>
+    <option name="BEFORE_PATH" />
+    <option name="AFTER_PATH" value="docs/cdp/img/cdp_create_segment_group.png" />
+    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_15_09_2022,_11_06_[Changes]/cdp_create_segment_group.png" />
+  </binary>
+</changelist>
