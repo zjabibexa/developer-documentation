@@ -345,6 +345,9 @@ nav:
         - Customer Data Platform: cdp/cdp.md
         - CDP installation: cdp/cdp_installation.md
         - CDP activation: cdp/cdp_activation.md
+        - Tracking:
+            - Implement CDP tracking: cdp/cdp_tracking.md
+            - Tracking events: cdp/cdp_events_tracking.md
     - Search:
         - Search: search/search.md
         - Elasticsearch search engine: search/elasticsearch_search_engine.md
