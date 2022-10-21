@@ -61,8 +61,10 @@ It will take you to a Dataflow Creator, where in five steps you will set up a da
 ### General Information
 
 In the **General Information** section, specify dataflow name,
-choose **Stream File** as a source of user data and **CDP** as a destination,
+choose **Tracker** as a source of user data and **CDP** as a destination,
 where they will be sent for processing.
+
+![Source of user data - tracker](img/cdp_source_tracker.png)
 
 ### Download
 
