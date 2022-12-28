@@ -1,7 +1,7 @@
 <?php
 
-$restApiReference = './docs/api/rest_api_reference/rest_api_reference.html';
-$dxpRoot = $argv[1];
+$restApiReference = $argv[1]; // './docs/api/rest_api/rest_api_reference/rest_api_reference.html';
+$dxpRoot = $argv[2];
 $testedRoutes = ReferenceTester::TEST_ALL_ROUTES;
 //$testedRoutes = ReferenceTester::TEST_REFERENCE_ROUTES;
 
