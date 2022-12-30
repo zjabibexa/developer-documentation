@@ -89,7 +89,8 @@ class ReferenceTester
         ksort($this->confRoutes);
     }
 
-    private function parseRouterOutput($consolePath) {
+    private function parseRouterOutput($consolePath)
+    {
         $confRoutes = [];
 
         $routerCommand = 'debug:router --format=txt';
@@ -325,30 +326,46 @@ class ReferenceTester
 
     private function getConfRoutePrompt(string $path, $method = null): string
     {
+        $prompt = $path;
+
         if (array_key_exists($path, $this->confRoutes)) {
             if ($method && array_key_exists($method, $this->confRoutes[$path]['methods'])) {
-                return "$path ({$this->confRoutes[$path]['methods'][$method]['file']}@{$this->confRoutes[$path]['methods'][$method]['line']})";
+                if (array_key_exists('file', $this->confRoutes[$path]['methods'][$method]) && !is_null($this->confRoutes[$path]['methods'][$method]['file'])) {
+                    $location = $this->confRoutes[$path]['methods'][$method]['file'];
+                    if (array_key_exists('line', $this->confRoutes[$path]['methods'][$method]) && !is_null($this->confRoutes[$path]['methods'][$method]['line'])) {
+                        $location .= "@{$this->confRoutes[$path]['methods'][$method]['line']}";
+                    }
+                    $prompt = "$prompt ($location)";
+                }
             } else {
                 $files = [];
                 $lines = [];
                 $pairs = [];
                 foreach ($this->confRoutes[$path]['methods'] as $methodDetail) {
-                    $files[] = $methodDetail['file'];
-                    $lines[] = $methodDetail['line'];
-                    $pairs[] = "{$methodDetail['file']}@{$methodDetail['line']}";
+                    if (array_key_exists('file', $methodDetail) && !is_null($methodDetail['file'])) {
+                        $files[] = $methodDetail['file'];
+                        if (array_key_exists('line', $methodDetail) && !is_null($methodDetail['line'])) {
+                            $lines[] = $methodDetail['line'];
+                            $pairs[] = "{$methodDetail['file']}@{$methodDetail['line']}";
+                        } else {
+                            $pairs[] = $methodDetail['file'];
+                        }
+                    }
                 }
                 $filteredFiles = array_unique($files);
-                if (1 < count($filteredFiles)) {
-                    $pairs = implode(',', array_unique($pairs));
-                    return "$path ($pairs)";
-                } else {
-                    $file = $filteredFiles[0];
-                    $lines = implode(',', array_unique($lines));
-                    return "$path ($file@$lines)";
+                if (!empty($filteredFiles)) {
+                    if (1 < count($filteredFiles)) {
+                        $pairs = implode(',', array_unique($pairs));
+                        $prompt = "$prompt ($pairs)";
+                    } else {
+                        $file = $filteredFiles[0];
+                        $lines = implode(',', array_unique($lines));
+                        $prompt = "$prompt ($file@$lines)";
+                    }
                 }
             }
         }
 
-        return $path;
+        return $prompt;
     }
 }
