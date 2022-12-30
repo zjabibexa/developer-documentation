@@ -5,7 +5,7 @@ $dxpRoot = $argv[2];
 $testedRoutes = ReferenceTester::TEST_ALL_ROUTES;
 //$testedRoutes = ReferenceTester::TEST_REFERENCE_ROUTES;
 
-$referenceTester = new ReferenceTester($restApiReference, $dxpRoot);
+$referenceTester = new ReferenceTester($restApiReference, $dxpRoot, false);
 $referenceTester->run($testedRoutes);
 
 class ReferenceTester
@@ -14,14 +14,15 @@ class ReferenceTester
     const TEST_CONFIG_ROUTES = 2;
     const TEST_ALL_ROUTES = 3;
 
+    private $apiUri = '/api/ibexa/v2';
+
     private $restApiReference;
     private $dxpRoot;
-    private $routingFiles;
 
     private $refRoutes;
     private $confRoutes;
 
-    public function __construct($restApiReference, $dxpRoot, $routingFiles = null)
+    public function __construct($restApiReference, $dxpRoot, $consolePath = 'bin/console', $routingFiles = null)
     {
         if (!is_file($restApiReference)) {
             user_error("$restApiReference doesn't exist or is not a file", E_USER_ERROR);
@@ -34,38 +35,18 @@ class ReferenceTester
 
         $this->restApiReference = $restApiReference;
         $this->dxpRoot = $dxpRoot;
-        $this->routingFiles = $routingFiles ?? [
-                'vendor/ibexa/rest/src/bundle/Resources/config/routing.yml',
-                'vendor/ibexa/commerce-rest/src/bundle/Resources/config/routing.yaml',
-                // `find $dxpRoot/vendor/ibexa -name "routing_rest.y*ml"`
-                //'vendor/ibexa/admin-ui/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/calendar/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/connector-dam/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/personalization/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/product-catalog/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/scheduler/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/taxonomy/src/bundle/Resources/config/routing_rest.yaml',
-            ];
-        $this->parse();
+        $this->parseApiReference($this->restApiReference);
+        $this->parseRoutes($consolePath, $routingFiles);
     }
 
-    private function parse(): void
+    private function parseApiReference($restApiReference): void
     {
-        $parsedRoutingFiles = [];
-        foreach ($this->routingFiles as $routingFile) {
-            $routingFilePath = "{$this->dxpRoot}/$routingFile";
-            if (!is_file($routingFilePath)) {
-                user_error("$routingFilePath doesn't exist or is not a file", E_USER_WARNING);
-                continue;
-            }
-            $parsedRoutingFiles[$routingFile] = yaml_parse_file($routingFilePath);
-        }
+        $refRoutes = [];
 
         $restApiRefDoc = new DOMDocument();
-        $restApiRefDoc->loadHTMLFile($this->restApiReference, LIBXML_NOERROR);
+        $restApiRefDoc->loadHTMLFile($restApiReference, LIBXML_NOERROR);
         $restApiRefXpath = new DOMXpath($restApiRefDoc);
 
-        $refRoutes = [];
         /** @var DOMElement $urlElement */
         foreach ($restApiRefXpath->query('//*[@data-field="url"]') as $urlElement) {
             if (!array_key_exists($urlElement->nodeValue, $refRoutes)) {
@@ -76,7 +57,87 @@ class ReferenceTester
             $refRoutes[$urlElement->nodeValue]['methods'][$urlElement->previousSibling->previousSibling->nodeValue] = true;
         }
 
+        $this->refRoutes = $refRoutes;
+        ksort($this->refRoutes);
+    }
+
+    private function parseRoutes($consolePath = 'bin/console', $routingFiles = null)
+    {
+        if (is_string($consolePath)) {
+            $this->parseRouterOutput($consolePath);
+        } elseif (is_array($routingFiles)) {
+            $this->parseRoutingFiles($routingFiles);
+        } elseif (is_string($routingFiles)) {
+            $this->parseRoutingFiles([$routingFiles]);
+        } else {
+            $this->parseRoutingFiles([
+                'vendor/ibexa/rest/src/bundle/Resources/config/routing.yml',
+                'vendor/ibexa/commerce-rest/src/bundle/Resources/config/routing.yaml',
+                // `find $dxpRoot/vendor/ibexa -name "routing_rest.y*ml"`
+                //'vendor/ibexa/admin-ui/src/bundle/Resources/config/routing_rest.yaml',
+                'vendor/ibexa/calendar/src/bundle/Resources/config/routing_rest.yaml',
+                'vendor/ibexa/connector-dam/src/bundle/Resources/config/routing_rest.yaml',
+                'vendor/ibexa/personalization/src/bundle/Resources/config/routing_rest.yaml',
+                'vendor/ibexa/product-catalog/src/bundle/Resources/config/routing_rest.yaml',
+                //'vendor/ibexa/scheduler/src/bundle/Resources/config/routing_rest.yaml', // prefixed /api/datebasedpublisher/v1
+                'vendor/ibexa/taxonomy/src/bundle/Resources/config/routing_rest.yaml',
+            ]);
+        }
+        ksort($this->confRoutes);
+    }
+
+    private function parseRouterOutput($consolePath) {
         $confRoutes = [];
+
+        $routerCommand = 'debug:router --format=txt';
+        $consolePathLastChar = substr($consolePath, -1);
+        if (in_array($consolePathLastChar, ['"', "'"])) {
+            $consoleCommand = substr($consolePath, 0, -1) . " {$routerCommand}{$consolePathLastChar}";
+        } else {
+            $consoleCommand = "$consolePath $routerCommand";
+        }
+
+        $routerOutput = shell_exec("cd {$this->dxpRoot} && $consoleCommand | grep '{$this->apiUri}'");
+
+        foreach (explode("\n", $routerOutput) as $outputLine) {
+            $outputLine = trim($outputLine);
+            if (empty($outputLine)) {
+                continue;
+            }
+            $lineParts = preg_split('/\s+/', $outputLine);
+            $routeId = $lineParts[0];
+            $method = $lineParts[1];
+            if ('OPTIONS' === $method) {
+                continue;
+            }
+            $routePath = str_replace($this->apiUri, '', $lineParts[4]);
+            if (!array_key_exists($routePath, $confRoutes)) {
+                $confRoutes[$routePath] = ['methods' => []];
+            }
+            $confRoutes[$routePath]['methods'][$method] = [
+                'id' => $routeId,
+                'file' => null,
+                'line' => null,
+            ];;
+        }
+
+        $this->confRoutes = $confRoutes;
+    }
+
+    private function parseRoutingFiles($routingFiles): void
+    {
+        $confRoutes = [];
+
+        $parsedRoutingFiles = [];
+        foreach ($routingFiles as $routingFile) {
+            $routingFilePath = "{$this->dxpRoot}/$routingFile";
+            if (!is_file($routingFilePath)) {
+                user_error("$routingFilePath doesn't exist or is not a file", E_USER_WARNING);
+                continue;
+            }
+            $parsedRoutingFiles[$routingFile] = yaml_parse_file($routingFilePath);
+        }
+
         foreach ($parsedRoutingFiles as $routingFile => $parsedRoutingFile) {
             foreach ($parsedRoutingFile as $routeId => $routeDef) {
                 $line = (int)explode(':', `grep -n '^$routeId:$' {$this->dxpRoot}/$routingFile`)[0];
@@ -99,7 +160,6 @@ class ReferenceTester
             }
         }
 
-        $this->refRoutes = $refRoutes;
         $this->confRoutes = $confRoutes;
     }
 
