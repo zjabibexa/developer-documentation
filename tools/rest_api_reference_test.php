@@ -28,6 +28,9 @@ class ReferenceTester
             user_error("$restApiReference doesn't exist or is not a file", E_USER_ERROR);
             exit(1);
         }
+        if ('~' === $dxpRoot[0]) {
+            $dxpRoot = trim(shell_exec("echo $dxpRoot"));
+        }
         if (!is_dir($dxpRoot)) {
             user_error("$dxpRoot doesn't exist or is not a directory", E_USER_ERROR);
             exit(2);
@@ -106,19 +109,21 @@ class ReferenceTester
             }
             $lineParts = preg_split('/\s+/', $outputLine);
             $routeId = $lineParts[0];
-            $method = $lineParts[1];
-            if ('OPTIONS' === $method) {
-                continue;
+            $methods = explode('|', $lineParts[1]);
+            foreach ($methods as $method) {
+                if ('OPTIONS' === $method) {
+                    continue;
+                }
+                $routePath = str_replace($this->apiUri, '', $lineParts[4]);
+                if (!array_key_exists($routePath, $confRoutes)) {
+                    $confRoutes[$routePath] = ['methods' => []];
+                }
+                $confRoutes[$routePath]['methods'][$method] = [
+                    'id' => $routeId,
+                    'file' => null,
+                    'line' => null,
+                ];;
             }
-            $routePath = str_replace($this->apiUri, '', $lineParts[4]);
-            if (!array_key_exists($routePath, $confRoutes)) {
-                $confRoutes[$routePath] = ['methods' => []];
-            }
-            $confRoutes[$routePath]['methods'][$method] = [
-                'id' => $routeId,
-                'file' => null,
-                'line' => null,
-            ];;
         }
 
         $this->confRoutes = $confRoutes;
