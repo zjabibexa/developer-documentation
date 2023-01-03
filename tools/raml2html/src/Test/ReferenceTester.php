@@ -1,18 +1,25 @@
 <?php
 
-$restApiReference = $argv[1]; // './docs/api/rest_api/rest_api_reference/rest_api_reference.html';
-$dxpRoot = $argv[2];
-$testedRoutes = ReferenceTester::TEST_ALL_ROUTES;
-//$testedRoutes = ReferenceTester::TEST_REFERENCE_ROUTES;
-
-$referenceTester = new ReferenceTester($restApiReference, $dxpRoot, false);
-$referenceTester->run($testedRoutes);
+namespace EzSystems\Raml2Html\Test;
 
 class ReferenceTester
 {
     const TEST_REFERENCE_ROUTES = 1;
     const TEST_CONFIG_ROUTES = 2;
     const TEST_ALL_ROUTES = 3;
+
+    const DEFAULT_FILE_LIST = [
+        'vendor/ibexa/rest/src/bundle/Resources/config/routing.yml',
+        'vendor/ibexa/commerce-rest/src/bundle/Resources/config/routing.yaml',
+        // `find $dxpRoot/vendor/ibexa -name "routing_rest.y*ml"`
+        //'vendor/ibexa/admin-ui/src/bundle/Resources/config/routing_rest.yaml',
+        'vendor/ibexa/calendar/src/bundle/Resources/config/routing_rest.yaml',
+        'vendor/ibexa/connector-dam/src/bundle/Resources/config/routing_rest.yaml',
+        'vendor/ibexa/personalization/src/bundle/Resources/config/routing_rest.yaml',
+        'vendor/ibexa/product-catalog/src/bundle/Resources/config/routing_rest.yaml',
+        //'vendor/ibexa/scheduler/src/bundle/Resources/config/routing_rest.yaml', // prefixed /api/datebasedpublisher/v1
+        'vendor/ibexa/taxonomy/src/bundle/Resources/config/routing_rest.yaml',
+    ];
 
     private $apiUri = '/api/ibexa/v2';
 
@@ -46,9 +53,9 @@ class ReferenceTester
     {
         $refRoutes = [];
 
-        $restApiRefDoc = new DOMDocument();
+        $restApiRefDoc = new \DOMDocument();
         $restApiRefDoc->loadHTMLFile($restApiReference, LIBXML_NOERROR);
-        $restApiRefXpath = new DOMXpath($restApiRefDoc);
+        $restApiRefXpath = new \DOMXpath($restApiRefDoc);
 
         /** @var DOMElement $urlElement */
         foreach ($restApiRefXpath->query('//*[@data-field="url"]') as $urlElement) {
@@ -73,18 +80,7 @@ class ReferenceTester
         } elseif (is_string($routingFiles)) {
             $this->parseRoutingFiles([$routingFiles]);
         } else {
-            $this->parseRoutingFiles([
-                'vendor/ibexa/rest/src/bundle/Resources/config/routing.yml',
-                'vendor/ibexa/commerce-rest/src/bundle/Resources/config/routing.yaml',
-                // `find $dxpRoot/vendor/ibexa -name "routing_rest.y*ml"`
-                //'vendor/ibexa/admin-ui/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/calendar/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/connector-dam/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/personalization/src/bundle/Resources/config/routing_rest.yaml',
-                'vendor/ibexa/product-catalog/src/bundle/Resources/config/routing_rest.yaml',
-                //'vendor/ibexa/scheduler/src/bundle/Resources/config/routing_rest.yaml', // prefixed /api/datebasedpublisher/v1
-                'vendor/ibexa/taxonomy/src/bundle/Resources/config/routing_rest.yaml',
-            ]);
+            $this->parseRoutingFiles(self::DEFAULT_FILE_LIST);
         }
         ksort($this->confRoutes);
     }
@@ -123,7 +119,7 @@ class ReferenceTester
                     'id' => $routeId,
                     'file' => null,
                     'line' => null,
-                ];;
+                ];
             }
         }
 
@@ -176,6 +172,11 @@ class ReferenceTester
 
         foreach (array_intersect(array_keys($refRoutes), array_keys($confRoutes)) as $commonRoute) {
             $missingMethods = $this->compareMethods($commonRoute, $commonRoute, $testedRoutes);
+            if (!array_key_exists('GET', $refRoutes[$commonRoute]['methods']) && array_key_exists('HEAD', $refRoutes[$commonRoute]['methods'])
+                && array_key_exists('GET', $confRoutes[$commonRoute]['methods']) && array_key_exists('HEAD', $confRoutes[$commonRoute]['methods'])
+                && !is_null($confRoutes[$commonRoute]['methods']['HEAD']['id']) && $confRoutes[$commonRoute]['methods']['GET']['id'] === $confRoutes[$commonRoute]['methods']['HEAD']['id']) {
+                echo "\t$commonRoute has no GET reference but has a HEAD reference, HEAD and GET share the same route id ({$confRoutes[$commonRoute]['methods']['GET']['id']}) so GET might be just a fallback for HEAD.\n";
+            }
             if ($missingMethods && false !== strpos($commonRoute, '{')) {
                 $similarRefRoutes = $this->getSimilarRoutes($commonRoute, $refRoutes);
                 $similarConfRoutes = $this->getSimilarRoutes($commonRoute, $confRoutes);
@@ -285,7 +286,7 @@ class ReferenceTester
         if (self::TEST_CONFIG_ROUTES & $testedRoutes) {
             foreach (array_diff(array_keys($confRoutes[$confRoute]['methods']), array_keys($refRoutes[$refRoute]['methods'])) as $confMethodWithoutRef) {
                 if (null === $testedMethods || in_array($confMethodWithoutRef, $testedMethods)) {
-                    echo "{$this->getConfRoutePrompt($confRoute, $confMethodWithoutRef)}: $confMethodWithoutRef not found in reference" . ($refRoute === $confRoute ? '' : " (while comparing to $refRoute)") . ".\n";;
+                    echo "{$this->getConfRoutePrompt($confRoute, $confMethodWithoutRef)}: $confMethodWithoutRef not found in reference" . ($refRoute === $confRoute ? '' : " (while comparing to $refRoute)") . ".\n";
                     $missingMethods[] = $confMethodWithoutRef;
                 }
             }
